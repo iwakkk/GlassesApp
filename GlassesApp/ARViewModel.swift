@@ -10,6 +10,7 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     @Published var faceShapeResult: String = ""
     @Published var showResultPage = false
     @Published var hasAddedModel = false
+    @Published var shouldDisplayModel = false
 
     let glassesModels = ["glasses3.usdz", "glasses2.usdz", "glasses1.usdz"]
     let glassesNames = ["Classic", "Round", "Sport"]
@@ -58,7 +59,7 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
 
             updateGlassesScale()
 
-            if !hasAddedModel {
+            if !hasAddedModel && shouldDisplayModel {
                 loadGlassesModel(named: glassesModels[currentIndex])
                 hasAddedModel = true
             }

@@ -46,6 +46,7 @@ struct TryGlassesView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            arViewModel.shouldDisplayModel = true
             arViewModel.hasAddedModel = false
 
             if let arView = arViewModel.arView {
@@ -59,6 +60,10 @@ struct TryGlassesView: View {
                 arViewModel.loadGlassesModel(named: arViewModel.glassesModels[arViewModel.currentIndex])
                 arViewModel.hasAddedModel = true
             }
+        }
+        .onDisappear{
+            arViewModel.shouldDisplayModel = false
+            arViewModel.hasAddedModel = true
         }
 
     }
