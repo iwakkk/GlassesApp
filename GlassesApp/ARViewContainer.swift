@@ -6,9 +6,15 @@ struct ARViewContainer: UIViewRepresentable {
     @EnvironmentObject var arViewModel: ARViewModel
 
     func makeUIView(context: Context) -> ARView {
-        let arView = ARView(frame: .zero)
-        arViewModel.setupARView(for: arView)
-        return arView
+        
+        if arViewModel.arView != nil{
+            return arViewModel.arView!
+        }else{
+            let arView = ARView(frame: .zero)
+            arViewModel.setupARView(for: arView)
+            return arView
+        }
+        
     }
 
     func updateUIView(_ uiView: ARView, context: Context) {
