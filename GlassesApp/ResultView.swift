@@ -1,4 +1,3 @@
-//
 //  ResultView.swift
 //  GlassesApp
 //

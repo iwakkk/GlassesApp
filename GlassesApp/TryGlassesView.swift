@@ -1,68 +1,65 @@
 import SwiftUI
+import RealityKit
+import ARKit
 
 struct TryGlassesView: View {
     @EnvironmentObject var arViewModel: ARViewModel
-    @Environment(\.dismiss) var dismiss
 
     var body: some View {
-        ZStack {
-            ARViewContainer()
-                .edgesIgnoringSafeArea(.all)
+        VStack {
+            ZStack {
+                ARViewContainer()
+                    .edgesIgnoringSafeArea(.all)
 
-            VStack {
-                HStack {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .padding()
-                            .background(Color.white.opacity(0.7))
-                            .clipShape(Circle())
-                    }
+                VStack {
                     Spacer()
-                }
-                .padding()
-
-                Spacer()
-
-                VStack(spacing: 10) {
-                    Text("Model: \(arViewModel.glassesNames[arViewModel.currentIndex])")
-                        .padding(8)
-                        .background(Color.white.opacity(0.8))
-                        .cornerRadius(12)
-
                     HStack {
                         Button(action: {
                             arViewModel.previousGlasses()
                         }) {
                             Image(systemName: "chevron.left.circle.fill")
-                                .resizable()
-                                .frame(width: 40, height: 40)
-                                .foregroundColor(.white)
-                                .shadow(radius: 4)
+                                .font(.largeTitle)
+                                .foregroundColor(.blue)
                         }
+
+                        Spacer()
+
+                        Text("Try: \(arViewModel.glassesNames[arViewModel.currentIndex])")
+                            .foregroundColor(.white)
+                            .font(.headline)
+
+                        Spacer()
 
                         Button(action: {
                             arViewModel.nextGlasses()
                         }) {
                             Image(systemName: "chevron.right.circle.fill")
-                                .resizable()
-                                .frame(width: 40, height: 40)
-                                .foregroundColor(.white)
-                                .shadow(radius: 4)
+                                .font(.largeTitle)
+                                .foregroundColor(.blue)
                         }
                     }
+                    .padding()
+                    .background(Color.black.opacity(0.5))
                 }
-                .padding(.bottom, 40)
             }
         }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            arViewModel.shouldDisplayModel = true
             arViewModel.hasAddedModel = false
+
+            if let arView = arViewModel.arView {
+                let config = ARFaceTrackingConfiguration()
+                config.isLightEstimationEnabled = true
+                arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+                print("🔁 ARSession restarted")
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                arViewModel.loadGlassesModel(named: arViewModel.glassesModels[arViewModel.currentIndex])
+                arViewModel.hasAddedModel = true
+            }
         }
-        .onDisappear {
-            arViewModel.shouldDisplayModel = false
-            arViewModel.hasAddedModel = false
-        }
+
     }
 }

@@ -47,15 +47,6 @@ struct ContentView: View {
             .padding()
             .padding(.top, 90)
         }
-        
-        NavigationLink(destination: TryGlassesView().environmentObject(arViewModel)) {
-            Text("👓 Try Glasses")
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .clipShape(Capsule())
-        }
-        .padding(.top)
     }
 }
 
@@ -119,3 +110,5 @@ extension UIImage {
     ContentView()
         .environmentObject(ARViewModel()) // agar preview tidak error
 }
+
+//

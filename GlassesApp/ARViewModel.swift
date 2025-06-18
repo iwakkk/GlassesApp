@@ -5,13 +5,11 @@ import CoreML
 
 @MainActor
 class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
-    
     @Published var currentIndex = 0
     @Published var capturedImage: UIImage?
     @Published var faceShapeResult: String = ""
     @Published var showResultPage = false
     @Published var hasAddedModel = false
-    @Published var shouldDisplayModel = false
 
     let glassesModels = ["glasses3.usdz", "glasses2.usdz", "glasses1.usdz"]
     let glassesNames = ["Classic", "Round", "Sport"]
@@ -20,12 +18,6 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     var anchor: AnchorEntity?
     var currentModel: ModelEntity?
     var faceAnchorData: ARFaceAnchor?
-
-    let modelRotations: [String: simd_quatf] = [
-        "glasses3.usdz": simd_quatf(angle: 0, axis: [0, 1, 0]),
-        "glasses2.usdz": simd_quatf(angle: 0, axis: [0, 1, 0]),
-        "glasses1.usdz": simd_quatf(angle: 0, axis: [0, 1, 0])
-    ]
 
     func nextGlasses() {
         currentIndex = (currentIndex + 1) % glassesModels.count
@@ -41,6 +33,7 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
         self.arView = arView
         arView.session.delegate = self
 
+        // Tambahkan anchor sebelum session dijalankan
         let faceAnchorEntity = AnchorEntity(.face)
         arView.scene.anchors.append(faceAnchorEntity)
         self.anchor = faceAnchorEntity
@@ -49,23 +42,23 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
         let config = ARFaceTrackingConfiguration()
         config.isLightEstimationEnabled = true
         arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+
         print("✅ ARView setup completed")
     }
+
 
     func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
         for anchor in anchors {
             guard let faceAnchor = anchor as? ARFaceAnchor else { continue }
             self.faceAnchorData = faceAnchor
 
-            if let faceEntity = self.anchor {
-                faceEntity.transform = Transform(matrix: faceAnchor.transform)
-            }
+            // Log posisi untuk debugging
+            let headPosition = faceAnchor.transform.columns.3
+            print("🧠 Head position updated: x:\(headPosition.x), y:\(headPosition.y), z:\(headPosition.z)")
 
-            if let model = currentModel {
-                updateGlassesTransform(for: faceAnchor, model: model)
-            }
+            updateGlassesScale()
 
-            if !hasAddedModel && shouldDisplayModel {
+            if !hasAddedModel {
                 loadGlassesModel(named: glassesModels[currentIndex])
                 hasAddedModel = true
             }
@@ -74,7 +67,6 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
 
     func loadGlassesModel(named name: String) {
         currentModel?.removeFromParent()
-
         guard let anchor = anchor else {
             print("⚠️ Anchor belum siap")
             return
@@ -84,39 +76,37 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
             let model = try ModelEntity.loadModel(named: name)
             print("✅ Berhasil load model: \(name)")
 
-            model.position = [0, 0, 0]
-            model.orientation = modelRotations[name] ?? simd_quatf(angle: 0, axis: [0, 1, 0])
+            // Tambahkan sebagai anak dari anchor wajah (tidak perlu posisi aneh-aneh dulu)
+            model.position = [0, 0.02, 0.05] // ini masih boleh, asal sesuai wajah
 
+            // Skala disesuaikan dengan wajah nanti di updateGlassesScale()
+            model.orientation = simd_quatf(angle: 0, axis: [0,1,0])
             anchor.addChild(model)
+
             self.currentModel = model
             print("✅ Model ditambahkan ke anchor")
+            updateGlassesScale()
         } catch {
             print("❌ Gagal load model \(name): \(error.localizedDescription)")
         }
     }
 
-    func updateGlassesTransform(for faceAnchor: ARFaceAnchor, model: ModelEntity) {
-        let leftEyePos = faceAnchor.leftEyeTransform.columns.3
-        let rightEyePos = faceAnchor.rightEyeTransform.columns.3
-        let midEye = (leftEyePos + rightEyePos) / 2
 
-        let verticalOffset: Float = 0.02
-        let glassesPosition = SIMD3<Float>(midEye.x, midEye.y + verticalOffset, midEye.z)
+    func updateGlassesScale() {
+        guard let face = faceAnchorData, let model = currentModel else { return }
 
-        model.position = glassesPosition
-        print("📍 Model position updated to \(glassesPosition)")
+        let leftEye = face.leftEyeTransform.columns.3
+        let rightEye = face.rightEyeTransform.columns.3
+        let distance = simd_distance(leftEye, rightEye)
+        print("👁 Jarak mata: \(distance)")
 
-        model.orientation = simd_quatf(faceAnchor.transform)
-        print("🔄 Model rotation updated to follow face orientation")
-
-        let eyeDistance = simd_distance(leftEyePos, rightEyePos)
         let defaultEyeDistance: Float = 0.06
+        let scaleRatio = distance / defaultEyeDistance
         let baseScale: Float = 0.001
-        let scaleRatio = eyeDistance / defaultEyeDistance
         let scaleFactor = max(baseScale * scaleRatio, 0.001)
 
         model.setScale(SIMD3<Float>(repeating: scaleFactor), relativeTo: nil)
-        print("📐 Skala model diperbarui: \(scaleFactor)")
+        print("📐 Skala disesuaikan: \(scaleFactor)")
     }
 
     func reloadCurrentGlasses() {
@@ -126,7 +116,6 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
 
     func classifyFaceShape() {
         guard let arView = arView else { return }
-
         arView.snapshot(saveToHDR: false) { image in
             guard let uiImage = image,
                   let pixelBuffer = uiImage.toCVPixelBuffer(),
@@ -140,7 +129,6 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
                 self.capturedImage = uiImage
                 self.faceShapeResult = prediction.target
                 self.showResultPage = true
-                // Jangan load model di sini
             }
         }
     }
