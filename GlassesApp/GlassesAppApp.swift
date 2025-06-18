@@ -9,9 +9,14 @@ import SwiftUI
 
 @main
 struct GlassesAppApp: App {
+    @StateObject private var arViewModel = ARViewModel()
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            NavigationStack {
+                ContentView()
+                    .environmentObject(arViewModel)
+            }
         }
     }
 }
