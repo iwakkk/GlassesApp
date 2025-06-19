@@ -13,13 +13,18 @@ struct ContentView: View {
                 Text("Place your face here")
                     .foregroundColor(.black)
                     .font(.title3)
+                    .padding()
 
                 ZStack {
                     ARViewContainer()
                         .frame(width: 300, height: 300)
                         .cornerRadius(16)
+                        .mask(
+                            Ellipse()
+                                .frame(width: 300, height: 300)
+                        )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
+                            Ellipse()
                                 .stroke(Color.green, lineWidth: 3)
                         )
                 }
