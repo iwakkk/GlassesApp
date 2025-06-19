@@ -4,6 +4,11 @@ import ARKit
 
 struct TryGlassesView: View {
     @EnvironmentObject var arViewModel: ARViewModel
+    var result: String
+    
+    var recommendation: GlassesRecommendation {
+        getRecommendation(for: result)
+    }
 
     var body: some View {
         VStack {
@@ -24,7 +29,7 @@ struct TryGlassesView: View {
 
                         Spacer()
 
-                        Text("Try: \(arViewModel.glassesNames[arViewModel.currentIndex])")
+                        Text("Try: \(recommendation.glassesName[arViewModel.currentIndex])")
                             .foregroundColor(.white)
                             .font(.headline)
 
@@ -68,3 +73,8 @@ struct TryGlassesView: View {
 
     }
 }
+
+//#Preview {
+//    TryGlassesView()
+//        .environmentObject(ARViewModel())
+//}

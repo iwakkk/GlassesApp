@@ -14,8 +14,8 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     @Published var shouldDisplayModel = false           // Flag to control whether model should be shown
 
     // Array of model file names and corresponding display names
-    @Published var glassesModels = ["glasses3.usdz", "glasses2.usdz", "glasses1.usdz"]
-    @Published var glassesNames = ["Classic", "Round", "Sport"]
+    @Published var glassesModels: [String] = []
+//    @Published var glassesNames = ["Classic", "Round", "Sport"]
 
     // References for AR components
     var arView: ARView?                                 // The ARView displaying the scene
@@ -152,8 +152,29 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
             DispatchQueue.main.async {
                 self.capturedImage = uiImage
                 self.faceShapeResult = prediction.target
+                self.updateGlassesFromRecommendation()
                 self.showResultPage = true
             }
         }
+    }
+    
+    func updateGlassesFromRecommendation() {
+        let recommendation = getRecommendation(for: faceShapeResult)
+        self.glassesModels = recommendation.imageName       // file usdz
+        self.currentIndex = 0
+        self.hasAddedModel = false // agar bisa load ulang
+        print("🕶️ Loaded models for face shape: \(faceShapeResult)")
+        
+//        let recommendation = getRecommendation(for: faceShapeResult)
+//        
+//        // Ambil semua modelFile dari seluruh groups dan variants
+//        let models = recommendation.groups.flatMap { group in
+//            group.variants.map { $0.modelFile }
+//        }
+//        
+//        self.glassesModels = models     // file usdz
+//        self.currentIndex = 0
+//        self.hasAddedModel = false // agar bisa load ulang
+//        print("🕶️ Loaded models for face shape: \(faceShapeResult)")
     }
 }

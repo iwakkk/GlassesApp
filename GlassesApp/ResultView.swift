@@ -8,6 +8,7 @@ import SwiftUI
 struct ResultView: View {
     var image: UIImage?
     var result: String
+    @State private var selectedGroupIndex: Int = 0
     @EnvironmentObject var arViewModel: ARViewModel
     
     var recommendation: GlassesRecommendation {
@@ -31,6 +32,11 @@ struct ResultView: View {
                     .frame(width: 200, height: 200)
             }
             
+            Text(recommendation.description)
+                .font(.body)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
             Divider()
                 .padding(.vertical)
 
@@ -38,24 +44,48 @@ struct ResultView: View {
                 .font(.headline)
                 .padding(.bottom, 4)
 
+            //Button color
+//            HStack {
+//                ForEach(recommendation.groups.indices, id: \.self) { index in
+//                    let group = recommendation.groups[index]
+//                    // tampilkan nama group atau tombol pilihan
+//                    let selectedGroup = recommendation.groups[selectedGroupIndex]
+//                    
+//                    ForEach(selectedGroup.variants, id: \.modelFile) { variant in
+//                        Text(variant.displayName)
+//                        
+//                        VStack {
+//                            Image(group.displayName) // pastikan nama image cocok dengan asset di project
+//                                .resizable()
+//                                .scaledToFit()
+//                                .frame(height: 150)
+//                                .cornerRadius(10)
+//                            
+//                            Text(group.displayName)
+//                                .font(.caption)
+//                        }
+//                    }
+//                }
+//            }
+            
             HStack {
-                ForEach(recommendation.imageName.indices, id: \.self) { index in
-                    Image(recommendation.imageName[index])
+                ForEach(recommendation.glassesName.indices, id: \.self) { index in
+                    Image(recommendation.glassesName[index])
                         .resizable()
                         .scaledToFit()
                         .frame(height: 150)
                         .cornerRadius(10)
                 }
             }
-
-            Text(recommendation.description)
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+ 
+//            Text(recommendation.description)
+//                .font(.body)
+//                .multilineTextAlignment(.center)
+//                .padding(.horizontal)
             
             Spacer()
             
-            NavigationLink(destination: TryGlassesView().environmentObject(arViewModel)) {
+            NavigationLink(destination: TryGlassesView(result: result).environmentObject(arViewModel)) {
                 Text("👓 Try Glasses")
                     .padding()
                     .background(Color.blue)
