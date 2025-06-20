@@ -4,7 +4,9 @@ import ARKit
 
 struct TryGlassesView: View {
     @EnvironmentObject var arViewModel: ARViewModel
-
+    var isSingleMode: Bool = false
+    
+    
     var body: some View {
         VStack {
             ZStack {
@@ -13,47 +15,56 @@ struct TryGlassesView: View {
 
                 VStack {
                     Spacer()
-                    HStack {
-                        Button(action: {
-                            arViewModel.previousGlasses()
-                        }) {
-                            Image(systemName: "chevron.left.circle.fill")
-                                .font(.largeTitle)
-                                .foregroundColor(.blue)
+                    
+                    if !isSingleMode{
+                        HStack {
+                            Button(action: {
+                                arViewModel.previousGlasses()
+                            }) {
+                                Image(systemName: "chevron.left.circle.fill")
+                                    .font(.largeTitle)
+                                    .foregroundColor(.blue)
+                            }
+
+                            Spacer()
+
+                            Text("Try: \(arViewModel.glassesNames[arViewModel.currentIndex])")
+                                .foregroundColor(.white)
+                                .font(.headline)
+
+                            Spacer()
+
+                            Button(action: {
+                                arViewModel.nextGlasses()
+                            }) {
+                                Image(systemName: "chevron.right.circle.fill")
+                                    .font(.largeTitle)
+                                    .foregroundColor(.blue)
+                            }
                         }
-
-                        Spacer()
-
+                        .padding()
+                        .background(Color.black.opacity(0.5))
+                    }
+                    else {
                         Text("Try: \(arViewModel.glassesNames[arViewModel.currentIndex])")
+                            .background(.blue)
                             .foregroundColor(.white)
                             .font(.headline)
-
-                        Spacer()
-
-                        Button(action: {
-                            arViewModel.nextGlasses()
-                        }) {
-                            Image(systemName: "chevron.right.circle.fill")
-                                .font(.largeTitle)
-                                .foregroundColor(.blue)
-                        }
+                            .cornerRadius(20)
                     }
-                    .padding()
-                    .background(Color.black.opacity(0.5))
+
                 }
             }
         }
-        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            arViewModel.shouldDisplayModel = true
+            arViewModel.shouldDisplayModel = false
             arViewModel.hasAddedModel = false
 
             if let arView = arViewModel.arView {
                 let config = ARFaceTrackingConfiguration()
                 config.isLightEstimationEnabled = true
                 arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
-                print("🔁 ARSession restarted")
             }
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -61,10 +72,8 @@ struct TryGlassesView: View {
                 arViewModel.hasAddedModel = true
             }
         }
-        .onDisappear{
+        .onDisappear {
             arViewModel.shouldDisplayModel = false
-            arViewModel.hasAddedModel = true
         }
-
     }
 }

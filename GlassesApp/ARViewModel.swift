@@ -14,7 +14,7 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     @Published var shouldDisplayModel = false           // Flag to control whether model should be shown
 
     // Array of model file names and corresponding display names
-    @Published var glassesModels = ["glasses3.usdz", "glasses2.usdz", "glasses1.usdz"]
+    @Published var glassesModels = ["Glasses 2a.usdz", "Glasses 3a.usdz", "KACAMATA10.usdz"]
     @Published var glassesNames = ["Classic", "Round", "Sport"]
 
     // References for AR components

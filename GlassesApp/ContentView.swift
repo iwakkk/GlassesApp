@@ -9,7 +9,7 @@ struct ContentView: View {
 
     var body: some View {
         TabView {
-            FaceScanView()
+            ListView()
                 .tabItem {
                     Label("Glasses", systemImage: "eyeglasses")
                 }
