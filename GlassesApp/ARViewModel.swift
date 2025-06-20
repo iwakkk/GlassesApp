@@ -15,7 +15,8 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
 
     // Array of model file names and corresponding display names
     @Published var glassesModels: [String] = []
-//    @Published var glassesNames = ["Classic", "Round", "Sport"]
+    @Published var currentRecommendation: GlassesRecommendation? = nil
+
 
     // References for AR components
     var arView: ARView?                                 // The ARView displaying the scene
@@ -160,21 +161,40 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     
     func updateGlassesFromRecommendation() {
         let recommendation = getRecommendation(for: faceShapeResult)
-        self.glassesModels = recommendation.imageName       // file usdz
+        self.currentRecommendation = recommendation
+        
+        let allModels = recommendation.groups.flatMap { $0.variants.map { $0.modelFile } }
+        self.glassesModels = allModels       // file usdz
         self.currentIndex = 0
         self.hasAddedModel = false // agar bisa load ulang
         print("🕶️ Loaded models for face shape: \(faceShapeResult)")
+    }
+    
+    func currentGroupAndVariant() -> (group: GlassesGroup, variant: GlassesVariant)? {
+        guard let recommendation = currentRecommendation else { return nil }
         
+        var flatIndex = 0
+        for group in recommendation.groups {
+            for variant in group.variants {
+                if flatIndex == currentIndex {
+                    return (group, variant)
+                }
+                flatIndex += 1
+            }
+        }
+        return nil
+    }
+
+}
+
 //        let recommendation = getRecommendation(for: faceShapeResult)
-//        
+//
 //        // Ambil semua modelFile dari seluruh groups dan variants
 //        let models = recommendation.groups.flatMap { group in
 //            group.variants.map { $0.modelFile }
 //        }
-//        
+//
 //        self.glassesModels = models     // file usdz
 //        self.currentIndex = 0
 //        self.hasAddedModel = false // agar bisa load ulang
 //        print("🕶️ Loaded models for face shape: \(faceShapeResult)")
-    }
-}
