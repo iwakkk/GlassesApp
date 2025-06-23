@@ -6,6 +6,9 @@ import CoreML
 @MainActor
 class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     // Observable state variables for UI binding
+    @Published var currentGroupIndex: Int = 0
+    @Published var currentVariantIndex: Int = 0
+
     @Published var currentIndex = 0                     // Current selected glasses index
     @Published var capturedImage: UIImage?              // Captured face image from ARView
     @Published var faceShapeResult: String = ""         // Result from CoreML face shape classification
@@ -14,8 +17,9 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     @Published var shouldDisplayModel = false           // Flag to control whether model should be shown
 
     // Array of model file names and corresponding display names
-    @Published var glassesModels = ["Glasses 2a.usdz", "Glasses 3a.usdz", "KACAMATA10.usdz"]
-    @Published var glassesNames = ["Classic", "Round", "Sport"]
+    @Published var glassesModels: [String] = []
+    @Published var currentRecommendation: GlassesRecommendation? = nil
+    
 
     // References for AR components
     var arView: ARView?                                 // The ARView displaying the scene
@@ -24,16 +28,38 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     var faceAnchorData: ARFaceAnchor?                   // Live face tracking data from ARKit
 
     // Move to next glasses model
-    func nextGlasses() {
-        currentIndex = (currentIndex + 1) % glassesModels.count
-        reloadCurrentGlasses()
+//    func nextGlasses() {
+//        currentIndex = (currentIndex + 1) % glassesModels.count
+//        reloadCurrentGlasses()
+//    }
+//
+//    // Move to previous glasses model
+//    func previousGlasses() {
+//        currentIndex = (currentIndex - 1 + glassesModels.count) % glassesModels.count
+//        reloadCurrentGlasses()
+//    }
+    
+    func nextGroup() {
+        guard let recommendation = currentRecommendation else { return }
+        if currentGroupIndex < recommendation.groups.count - 1 {
+            currentGroupIndex += 1
+            currentVariantIndex = 0
+            reloadCurrentGlasses()
+        }
     }
 
-    // Move to previous glasses model
-    func previousGlasses() {
-        currentIndex = (currentIndex - 1 + glassesModels.count) % glassesModels.count
-        reloadCurrentGlasses()
+    func previousGroup() {
+        if currentGroupIndex > 0 {
+            currentGroupIndex -= 1
+            currentVariantIndex = 0
+            reloadCurrentGlasses()
+        }
     }
+    
+    func selectVariant(index: Int) {
+           currentVariantIndex = index
+           reloadCurrentGlasses()
+       }
 
     // Setup the ARView and start face tracking session
     func setupARView(for arView: ARView) {
@@ -85,7 +111,6 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
             print("⚠️ Anchor not ready")
             return
         }
-
         do {
             // Load model from .usdz file
             let model = try ModelEntity.loadModel(named: name)
@@ -132,7 +157,10 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     // Reload current model based on index (e.g., when switching glasses)
     func reloadCurrentGlasses() {
         guard hasAddedModel else { return }
-        loadGlassesModel(named: glassesModels[currentIndex])
+        //        loadGlassesModel(named: glassesModels[currentIndex])
+        if let modelName = currentModelFile() {
+            loadGlassesModel(named: modelName)
+        }
     }
 
     // Take a snapshot and run CoreML model to classify face shape
@@ -152,8 +180,39 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
             DispatchQueue.main.async {
                 self.capturedImage = uiImage
                 self.faceShapeResult = prediction.target
+                self.updateGlassesFromRecommendation()
                 self.showResultPage = true
             }
         }
+    }
+    
+    func updateGlassesFromRecommendation() {
+        let recommendation = getRecommendation(for: faceShapeResult)
+        self.currentRecommendation = recommendation
+        
+        self.currentGroupIndex = 0
+        self.currentVariantIndex = 0
+        
+        let allModels = recommendation.groups.flatMap { $0.variants.map { $0.modelFile } }
+        self.glassesModels = allModels       // file usdz
+//        self.currentIndex = 0
+        self.hasAddedModel = false // agar bisa load ulang
+        print("🕶️ Loaded models for face shape: \(faceShapeResult)")
+    }
+    
+    func currentGroupAndVariant() -> (group: GlassesGroup, variant: GlassesVariant)? {
+        guard let recommendation = currentRecommendation else { return nil }
+        guard recommendation.groups.indices.contains(currentGroupIndex) else { return nil }
+        let group = recommendation.groups[currentGroupIndex]
+        guard group.variants.indices.contains(currentVariantIndex) else { return nil }
+        return (group, group.variants[currentVariantIndex])
+    }
+    
+    func currentModelFile() -> String? {
+        guard let recommendation = currentRecommendation else { return nil }
+        guard recommendation.groups.indices.contains(currentGroupIndex) else { return nil }
+        let group = recommendation.groups[currentGroupIndex]
+        guard group.variants.indices.contains(currentVariantIndex) else { return nil }
+        return group.variants[currentVariantIndex].modelFile
     }
 }
