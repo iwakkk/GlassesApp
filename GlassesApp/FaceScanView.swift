@@ -47,6 +47,8 @@ struct FaceScanView: View {
             }
             .padding()
             .padding(.top, 90)
+
+
         }
     }
 }

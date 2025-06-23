@@ -8,7 +8,9 @@ struct ContentView: View {
     @EnvironmentObject var arViewModel: ARViewModel
 
     var body: some View {
+        
         TabView {
+            
             ListView()
                 .tabItem {
                     Label("Glasses", systemImage: "eyeglasses")
@@ -17,11 +19,6 @@ struct ContentView: View {
             FaceScanView()
                 .tabItem {
                     Label("Scan", systemImage: "faceid")
-                }
-
-            FaceScanView()
-                .tabItem {
-                    Label("Favorites", systemImage: "star.fill")
                 }
         }
     }
