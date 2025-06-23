@@ -5,119 +5,144 @@ import CoreML
 
 @MainActor
 class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
-    // Observable state variables for UI binding
-    @Published var currentGroupIndex: Int = 0
-    @Published var currentVariantIndex: Int = 0
 
-    @Published var currentIndex = 0                     // Current selected glasses index
-    @Published var capturedImage: UIImage?              // Captured face image from ARView
-    @Published var faceShapeResult: String = ""         // Result from CoreML face shape classification
-    @Published var showResultPage = false               // Flag to toggle result screen
-    @Published var hasAddedModel = false                // Flag to ensure model is added only once
-    @Published var shouldDisplayModel = false           // Flag to control whether model should be shown
-
-    // Array of model file names and corresponding display names
-
-    
-    @Published var favorites: Set<String> = []
-        
-
-    @Published var glassesModels: [String] = []
-    @Published var currentRecommendation: GlassesRecommendation? = nil
-    
-    // References for AR components
-    var arView: ARView?                                 // The ARView displaying the scene
-    var anchor: AnchorEntity?                           // Face anchor entity to attach models
-    var currentModel: ModelEntity?                      // Currently loaded glasses model
-    var faceAnchorData: ARFaceAnchor?                   // Live face tracking data from ARKit
-
-    func toggleFavorite(_ modelName: String) {
-            if favorites.contains(modelName) {
-                favorites.remove(modelName)
-            } else {
-                favorites.insert(modelName)
+    @Published var currentGroupIndex: Int = 0 {
+        didSet {
+            currentVariantIndex = 0
+            if hasAddedModel {
+                reloadCurrentGlasses()
             }
         }
-        
+    }
+    
+    @Published var currentVariantIndex: Int = 0 {
+        didSet {
+            if hasAddedModel {
+                reloadCurrentGlasses()
+            }
+        }
+    }
+    
+    
+
+    @Published var capturedImage: UIImage?
+    @Published var faceShapeResult: String = ""
+    @Published var showResultPage = false
+    @Published var hasAddedModel = false
+    @Published var shouldDisplayModel = false
+    @Published var favorites: Set<String> = []
+    @Published var glassesModels: [String] = []
+    @Published var currentRecommendation: GlassesRecommendation? = nil
+    @Published var modelToGroupName: [String: String] = [:]
+
+    var arView: ARView?
+    var anchor: AnchorEntity?
+    var currentModel: ModelEntity?
+    var faceAnchorData: ARFaceAnchor?
+    var result: String = ""
+
+    func loadAllGlasses() {
+        var result: [String] = []
+        var mapping: [String: String] = [:]
+
+        for group in allGlassesGroups {
+            if let firstVariant = group.variants.first {
+                result.append(firstVariant.modelFile)
+                mapping[firstVariant.modelFile] = group.name
+            }
+        }
+
+        self.glassesModels = result
+        self.modelToGroupName = mapping
+    }
+
+    
+    var recommendation: GlassesRecommendation {
+        getRecommendation(for: result)
+    }
+
+    var currentGroup: GlassesGroup? {
+        guard recommendation.groups.indices.contains(currentGroupIndex) else { return nil }
+        return recommendation.groups[currentGroupIndex]
+    }
+
+    func updateGlassesFromRecommendation() {
+        let recommendation = getRecommendation(for: faceShapeResult)
+        self.currentRecommendation = recommendation
+        self.currentGroupIndex = 0
+        self.currentVariantIndex = 0
+
+        var mapping: [String: String] = [:]
+        let allModels = recommendation.groups.flatMap { group in
+            group.variants.map { variant in
+                mapping[variant.modelFile] = group.name
+                return variant.modelFile
+            }
+        }
+        self.glassesModels = allModels
+        self.modelToGroupName = mapping
+        self.hasAddedModel = false
+        print("\u{1F576}\u{FE0F} Loaded models for face shape: \(faceShapeResult)")
+    }
+
+    func toggleFavorite(_ modelName: String) {
+        if favorites.contains(modelName) {
+            favorites.remove(modelName)
+        } else {
+            favorites.insert(modelName)
+        }
+    }
+
     func isFavorite(_ modelName: String) -> Bool {
         favorites.contains(modelName)
     }
-    
-    // Move to next glasses model
-//    func nextGlasses() {
-//        currentIndex = (currentIndex + 1) % glassesModels.count
-//        reloadCurrentGlasses()
-//    }
-//
-//    // Move to previous glasses model
-//    func previousGlasses() {
-//        currentIndex = (currentIndex - 1 + glassesModels.count) % glassesModels.count
-//        reloadCurrentGlasses()
-//    }
-    
+
     func nextGroup() {
         guard let recommendation = currentRecommendation else { return }
         if currentGroupIndex < recommendation.groups.count - 1 {
             currentGroupIndex += 1
-            currentVariantIndex = 0
-            reloadCurrentGlasses()
         }
     }
 
     func previousGroup() {
         if currentGroupIndex > 0 {
             currentGroupIndex -= 1
-            currentVariantIndex = 0
-            reloadCurrentGlasses()
         }
     }
-    
-    func selectVariant(index: Int) {
-           currentVariantIndex = index
-           reloadCurrentGlasses()
-       }
 
-    // Setup the ARView and start face tracking session
+    func selectVariant(index: Int) {
+        currentVariantIndex = index
+    }
+
     func setupARView(for arView: ARView) {
         self.arView = arView
         arView.session.delegate = self
 
-        // Add a face anchor entity to the scene before starting the session
         let faceAnchorEntity = AnchorEntity(.face)
         arView.scene.anchors.append(faceAnchorEntity)
         self.anchor = faceAnchorEntity
         print("✅ Face anchor added")
 
-        // Configure AR session for face tracking
         let config = ARFaceTrackingConfiguration()
         config.isLightEstimationEnabled = true
 
-        // Run session with options to reset tracking and remove old anchors
         arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
         print("✅ ARView setup completed")
     }
 
-    // Called every time ARKit updates face tracking data
     func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
         for anchor in anchors {
             guard let faceAnchor = anchor as? ARFaceAnchor else { continue }
             self.faceAnchorData = faceAnchor
-
-            // Debug: log head position for tracking
-            let headPosition = faceAnchor.transform.columns.3
-
-            // Adjust glasses scale based on eye distance
             updateGlassesScale()
 
-            // Add model only once when flag is true
             if !hasAddedModel && shouldDisplayModel {
-                loadGlassesModel(named: glassesModels[currentIndex])
-                hasAddedModel = true
-            }
-            else if !shouldDisplayModel{
-                if hasAddedModel {
-                        removeGlassesModel()
-                    }
+                if let modelName = currentModelFile() {
+                    loadGlassesModel(named: modelName)
+                    hasAddedModel = true
+                }
+            } else if !shouldDisplayModel, hasAddedModel {
+                removeGlassesModel()
             }
         }
     }
@@ -134,41 +159,31 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
         print("🗑 Model removed successfully")
     }
 
-    
-    // Load and display a glasses model by name
     func loadGlassesModel(named name: String) {
-        // Remove previous model if any
         currentModel?.removeFromParent()
 
         guard let anchor = anchor else {
             print("⚠️ Anchor not ready")
             return
         }
+
         do {
-            // Load model from .usdz file
             let model = try ModelEntity.loadModel(named: name)
             print("✅ Successfully loaded model: \(name)")
 
-            // Set position slightly in front of face for alignment
             model.position = [0, 0.02, 0.05]
-
-            // Initial rotation (can be customized)
             model.orientation = simd_quatf(angle: 0, axis: [0,1,0])
-
-            // Attach to face anchor
             anchor.addChild(model)
 
             self.currentModel = model
             print("✅ Model added to anchor")
 
-            // Adjust size based on face data
             updateGlassesScale()
         } catch {
             print("❌ Failed to load model \(name): \(error.localizedDescription)")
         }
     }
 
-    // Dynamically scale the model based on the user's face size (eye distance)
     func updateGlassesScale() {
         guard let face = faceAnchorData, let model = currentModel else { return }
 
@@ -176,7 +191,6 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
         let rightEye = face.rightEyeTransform.columns.3
         let distance = simd_distance(leftEye, rightEye)
 
-        // Normalize scale based on a default human eye distance (~6 cm)
         let defaultEyeDistance: Float = 0.06
         let scaleRatio = distance / defaultEyeDistance
         let baseScale: Float = 0.001
@@ -185,16 +199,13 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
         model.setScale(SIMD3<Float>(repeating: scaleFactor), relativeTo: nil)
     }
 
-    // Reload current model based on index (e.g., when switching glasses)
     func reloadCurrentGlasses() {
         guard hasAddedModel else { return }
-        //        loadGlassesModel(named: glassesModels[currentIndex])
         if let modelName = currentModelFile() {
             loadGlassesModel(named: modelName)
         }
     }
 
-    // Take a snapshot and run CoreML model to classify face shape
     func classifyFaceShape() {
         guard let arView = arView else { return }
 
@@ -207,7 +218,6 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
                 return
             }
 
-            // Update UI with prediction result
             DispatchQueue.main.async {
                 self.capturedImage = uiImage
                 self.faceShapeResult = prediction.target
@@ -216,21 +226,7 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
             }
         }
     }
-    
-    func updateGlassesFromRecommendation() {
-        let recommendation = getRecommendation(for: faceShapeResult)
-        self.currentRecommendation = recommendation
-        
-        self.currentGroupIndex = 0
-        self.currentVariantIndex = 0
-        
-        let allModels = recommendation.groups.flatMap { $0.variants.map { $0.modelFile } }
-        self.glassesModels = allModels       // file usdz
-//        self.currentIndex = 0
-        self.hasAddedModel = false // agar bisa load ulang
-        print("🕶️ Loaded models for face shape: \(faceShapeResult)")
-    }
-    
+
     func currentGroupAndVariant() -> (group: GlassesGroup, variant: GlassesVariant)? {
         guard let recommendation = currentRecommendation else { return nil }
         guard recommendation.groups.indices.contains(currentGroupIndex) else { return nil }
@@ -238,7 +234,7 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
         guard group.variants.indices.contains(currentVariantIndex) else { return nil }
         return (group, group.variants[currentVariantIndex])
     }
-    
+
     func currentModelFile() -> String? {
         guard let recommendation = currentRecommendation else { return nil }
         guard recommendation.groups.indices.contains(currentGroupIndex) else { return nil }
