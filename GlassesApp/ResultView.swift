@@ -8,6 +8,8 @@ import SwiftUI
 struct ResultView: View {
     var image: UIImage?
     var result: String
+    
+    
     @EnvironmentObject var arViewModel: ARViewModel
     
     @State private var glassesShape = ""

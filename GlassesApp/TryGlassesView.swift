@@ -13,7 +13,6 @@ struct TryGlassesView: View {
 
     var isSingleMode: Bool = false
     
-    
     var body: some View {
         VStack {
             ZStack {
@@ -129,7 +128,7 @@ struct TryGlassesView: View {
         }
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            arViewModel.shouldDisplayModel = false
+            arViewModel.shouldDisplayModel = true
             arViewModel.hasAddedModel = false
             
             if let arView = arViewModel.arView {

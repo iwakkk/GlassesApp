@@ -17,16 +17,32 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     @Published var shouldDisplayModel = false           // Flag to control whether model should be shown
 
     // Array of model file names and corresponding display names
+
+    
+    @Published var favorites: Set<String> = []
+        
+
     @Published var glassesModels: [String] = []
     @Published var currentRecommendation: GlassesRecommendation? = nil
     
-
     // References for AR components
     var arView: ARView?                                 // The ARView displaying the scene
     var anchor: AnchorEntity?                           // Face anchor entity to attach models
     var currentModel: ModelEntity?                      // Currently loaded glasses model
     var faceAnchorData: ARFaceAnchor?                   // Live face tracking data from ARKit
 
+    func toggleFavorite(_ modelName: String) {
+            if favorites.contains(modelName) {
+                favorites.remove(modelName)
+            } else {
+                favorites.insert(modelName)
+            }
+        }
+        
+    func isFavorite(_ modelName: String) -> Bool {
+        favorites.contains(modelName)
+    }
+    
     // Move to next glasses model
 //    func nextGlasses() {
 //        currentIndex = (currentIndex + 1) % glassesModels.count
@@ -89,7 +105,6 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
 
             // Debug: log head position for tracking
             let headPosition = faceAnchor.transform.columns.3
-            print("🧠 Head position updated: x:\(headPosition.x), y:\(headPosition.y), z:\(headPosition.z)")
 
             // Adjust glasses scale based on eye distance
             updateGlassesScale()
@@ -99,9 +114,27 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
                 loadGlassesModel(named: glassesModels[currentIndex])
                 hasAddedModel = true
             }
+            else if !shouldDisplayModel{
+                if hasAddedModel {
+                        removeGlassesModel()
+                    }
+            }
         }
     }
 
+    func removeGlassesModel() {
+        guard let model = currentModel else {
+            print("⚠️ No model to remove")
+            return
+        }
+
+        model.removeFromParent()
+        currentModel = nil
+        hasAddedModel = false
+        print("🗑 Model removed successfully")
+    }
+
+    
     // Load and display a glasses model by name
     func loadGlassesModel(named name: String) {
         // Remove previous model if any
@@ -142,7 +175,6 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
         let leftEye = face.leftEyeTransform.columns.3
         let rightEye = face.rightEyeTransform.columns.3
         let distance = simd_distance(leftEye, rightEye)
-        print("👁 Eye distance: \(distance)")
 
         // Normalize scale based on a default human eye distance (~6 cm)
         let defaultEyeDistance: Float = 0.06
@@ -151,7 +183,6 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
         let scaleFactor = max(baseScale * scaleRatio, 0.001)
 
         model.setScale(SIMD3<Float>(repeating: scaleFactor), relativeTo: nil)
-        print("📐 Scale adjusted: \(scaleFactor)")
     }
 
     // Reload current model based on index (e.g., when switching glasses)

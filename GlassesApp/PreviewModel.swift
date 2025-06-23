@@ -4,6 +4,7 @@ import SceneKit
 
 struct Glases3DView: UIViewRepresentable {
     let modelName: String
+    
     func makeUIView(context: Context) -> SCNView {
         let sceneView = SCNView()
         
@@ -11,14 +12,15 @@ struct Glases3DView: UIViewRepresentable {
         
         sceneView.autoenablesDefaultLighting = true
         
-        sceneView.allowsCameraControl = true
+        
+        //ganti true bila ingin digerakkan
+        sceneView.allowsCameraControl = false
         
         sceneView.backgroundColor = .clear
         if let url = Bundle.main.url(forResource: modelName, withExtension: nil),
            let scene = try? SCNScene(url: url, options: nil) {
             
             let rootNode = SCNNode()
-            // Create a new parent node
             
             for child in scene.rootNode.childNodes {
                 rootNode.addChildNode(child)}
@@ -37,6 +39,5 @@ struct Glases3DView: UIViewRepresentable {
         // No dynamic updates needed for static model view
     }
 }
-
 
 

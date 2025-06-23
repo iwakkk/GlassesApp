@@ -13,10 +13,8 @@ struct GlassesAppApp: App {
     
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
-                ContentView()
-                    .environmentObject(arViewModel)
-            }
+            ContentView()
+                .environmentObject(arViewModel)
         }
     }
 }
