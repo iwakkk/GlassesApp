@@ -20,6 +20,7 @@ class ARViewModel: NSObject, ObservableObject, ARSessionDelegate {
     @Published var glassesModels: [String] = []
     @Published var currentRecommendation: GlassesRecommendation? = nil
     
+
     // References for AR components
     var arView: ARView?                                 // The ARView displaying the scene
     var anchor: AnchorEntity?                           // Face anchor entity to attach models
