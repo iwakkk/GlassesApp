@@ -29,12 +29,12 @@ func getRecommendation(for shape: String) -> GlassesRecommendation {
         return GlassesRecommendation(
             faceShape: "Oval",
             groups: [
-                GlassesGroup(name: "Round", variants: [
-                    GlassesVariant(modelFile: "RoundBlack.usdz", displayName: "Black", color: "#121212"),
-                    GlassesVariant(modelFile: "RoundBrown.usdz", displayName: "Brown", color: "#8A4B24"),
-                    GlassesVariant(modelFile: "RoundSilver.usdz", displayName: "Silver", color: "#B0B0B0"),
-                    GlassesVariant(modelFile: "RoundGold.usdz", displayName: "Gold", color: "#D6B157"),
-                    GlassesVariant(modelFile: "RoundTrans.usdz", displayName: "Transparent", color: "#F7F7F7")
+                GlassesGroup(name: "Round A", variants: [
+                    GlassesVariant(modelFile: "RoundABlack.usdz", displayName: "Black", color: "#121212"),
+                    GlassesVariant(modelFile: "RoundABrown.usdz", displayName: "Brown", color: "#8A4B24"),
+                    GlassesVariant(modelFile: "RoundASilver.usdz", displayName: "Silver", color: "#B0B0B0"),
+                    GlassesVariant(modelFile: "RoundAGold.usdz", displayName: "Gold", color: "#D6B157"),
+                    GlassesVariant(modelFile: "RoundATrans.usdz", displayName: "Transparent", color: "#F7F7F7")
                 ]),
                 GlassesGroup(name: "Cat Eye", variants: [
                     GlassesVariant(modelFile: "CatEyeBlack.usdz", displayName: "Black", color: "#121212"),
@@ -100,7 +100,7 @@ func getRecommendation(for shape: String) -> GlassesRecommendation {
             faceShape: "Round",
             groups: [
                 GlassesGroup(name: "Rectangle", variants: [
-                    GlassesVariant(modelFile: "RectangleBlack.usdz", displayName: "Black", color: "#121212"),
+                    GlassesVariant(modelFile: "glasses3.usdz", displayName: "Black", color: "#121212"),
                     GlassesVariant(modelFile: "RectangleBrown.usdz", displayName: "Brown", color: "#8A4B24"),
                     GlassesVariant(modelFile: "RectangleSilver.usdz", displayName: "Silver", color: "#B0B0B0"),
                     GlassesVariant(modelFile: "RectangleGold.usdz", displayName: "Gold", color: "#D6B157"),
@@ -134,12 +134,12 @@ func getRecommendation(for shape: String) -> GlassesRecommendation {
         return GlassesRecommendation(
             faceShape: "Square",
             groups: [
-                GlassesGroup(name: "Round", variants: [
-                    GlassesVariant(modelFile: "RoundBlack.usdz", displayName: "Black", color: "#121212"),
-                    GlassesVariant(modelFile: "RoundBrown.usdz", displayName: "Brown", color: "#8A4B24"),
-                    GlassesVariant(modelFile: "RoundSilver.usdz", displayName: "Silver", color: "#B0B0B0"),
-                    GlassesVariant(modelFile: "RoundGold.usdz", displayName: "Gold", color: "#D6B157"),
-                    GlassesVariant(modelFile: "RoundTrans.usdz", displayName: "Transparent", color: "#F7F7F7")
+                GlassesGroup(name: "Round A", variants: [
+                    GlassesVariant(modelFile: "RoundABlack.usdz", displayName: "Black", color: "#121212"),
+                    GlassesVariant(modelFile: "RoundABrown.usdz", displayName: "Brown", color: "#8A4B24"),
+                    GlassesVariant(modelFile: "RoundASilver.usdz", displayName: "Silver", color: "#B0B0B0"),
+                    GlassesVariant(modelFile: "RoundAGold.usdz", displayName: "Gold", color: "#D6B157"),
+                    GlassesVariant(modelFile: "RoundATrans.usdz", displayName: "Transparent", color: "#F7F7F7")
                 ]),
                 GlassesGroup(name: "Cat Eye", variants: [
                     GlassesVariant(modelFile: "CatEyeBlack.usdz", displayName: "Black", color: "#121212"),

@@ -9,30 +9,35 @@ struct TryGlassesView: View {
     var recommendation: GlassesRecommendation {
         getRecommendation(for: result)
     }
-
+    
     var body: some View {
         VStack {
             ZStack {
                 ARViewContainer()
                     .environmentObject(arViewModel)
                     .edgesIgnoringSafeArea(.all)
-
+                
                 VStack {
                     Spacer()
                     
                     HStack {
-                        
                         if let group = currentGroup {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 12) {
                                     ForEach(Array(group.variants.enumerated()), id: \.offset) { index, variant in
-                                        let isSelected = index == baseIndex
+                                        let isSelected = index == arViewModel.currentVariantIndex
                                         let color = Color(hex: variant.color)
                                         
                                         VStack(spacing: 4) {
                                             Button(action: {
-                                                arViewModel.currentIndex = getGroupBaseIndex(recommendation: recommendation, groupName: group.name) + index
+                                                arViewModel.currentGroupIndex = currentGroupIndex
+                                                arViewModel.currentVariantIndex = index
                                                 arViewModel.reloadCurrentGlasses()
+                                                
+                                                //                                                arViewModel.currentIndex = getGroupBaseIndex(recommendation: recommendation, groupName: group.name) + index
+                                                //                                                arViewModel.reloadCurrentGlasses()
+                                                
+                                                print("GroupIndex: \(arViewModel.currentGroupIndex)")
                                             }) {
                                                 Circle()
                                                     .fill(color)
@@ -48,13 +53,13 @@ struct TryGlassesView: View {
                                         }
                                     }
                                 }
-                                .padding(.horizontal)
+                                .padding(15)
                             }
                         }
                     }
                     HStack {
                         Button(action: {
-                            arViewModel.previousGlasses()
+                            arViewModel.previousGroup()
                         }) {
                             Image(systemName: "chevron.left.circle.fill")
                                 .font(.largeTitle)
@@ -63,17 +68,15 @@ struct TryGlassesView: View {
                         
                         Spacer()
                         
-                        
-
-//                        Text("Try: \(recommendation.glassesName[arViewModel.currentIndex])")
-                        Text("Try: \(arViewModel.currentGroupAndVariant()?.group.name ?? "-")")
+                        //                        Text("Try: \(recommendation.glassesName[arViewModel.currentIndex])")
+                        Text("Try: \(currentGroup?.name ?? "-")")
                             .foregroundColor(.white)
                             .font(.headline)
-
+                        
                         Spacer()
-
+                        
                         Button(action: {
-                            arViewModel.nextGlasses()
+                            arViewModel.nextGroup()
                         }) {
                             Image(systemName: "chevron.right.circle.fill")
                                 .font(.largeTitle)
@@ -90,16 +93,20 @@ struct TryGlassesView: View {
         .onAppear {
             arViewModel.shouldDisplayModel = true
             arViewModel.hasAddedModel = false
-
+            
             if let arView = arViewModel.arView {
                 let config = ARFaceTrackingConfiguration()
                 config.isLightEstimationEnabled = true
                 arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
                 print("🔁 ARSession restarted")
             }
-
+            
+            //            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            //                arViewModel.loadGlassesModel(named: arViewModel.glassesModels[arViewModel.currentIndex])
+            //                arViewModel.hasAddedModel = true
+            
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                arViewModel.loadGlassesModel(named: arViewModel.glassesModels[arViewModel.currentIndex])
+                arViewModel.reloadCurrentGlasses()
                 arViewModel.hasAddedModel = true
             }
         }
@@ -107,28 +114,39 @@ struct TryGlassesView: View {
             arViewModel.shouldDisplayModel = false
             arViewModel.hasAddedModel = true
         }
-
+        
     }
+//    var currentGroup: GlassesGroup? {
+//        let recommendation = getRecommendation(for: result)
+//        var index = 0
+//        for group in recommendation.groups {
+//            if index + group.variants.count > arViewModel.currentIndex {
+//                return group
+//            }
+//            index += group.variants.count
+//        }
+//        return nil
+//    }
+    
     var currentGroup: GlassesGroup? {
-        let recommendation = getRecommendation(for: result)
-        var index = 0
-        for group in recommendation.groups {
-            if index + group.variants.count > arViewModel.currentIndex {
-                return group
-            }
-            index += group.variants.count
-        }
-        return nil
+        guard recommendation.groups.indices.contains(currentGroupIndex) else { return nil }
+        return recommendation.groups[currentGroupIndex]
     }
-    var baseIndex: Int {
-        if let group = currentGroup {
-            return arViewModel.currentIndex - getGroupBaseIndex(recommendation: recommendation, groupName: group.name)
-        }
-        return 0
+    
+    var currentGroupIndex: Int {
+        arViewModel.currentGroupIndex
     }
+    
+//    var baseIndex: Int {
+//        if let group = currentGroup {
+//            return arViewModel.currentIndex - getGroupBaseIndex(recommendation: recommendation, groupName: group.name)
+//        }
+//        return 0
+//    }
 
 }
 
+// menghitung index awal suatu grup di dalam array glassesModels (file usdz) karena disimpan di dalam 1 line
 func getGroupBaseIndex(recommendation: GlassesRecommendation, groupName: String) -> Int {
     var base = 0
     for group in recommendation.groups {
@@ -161,7 +179,7 @@ extension Color {
 //        .environmentObject(ARViewModel())
 //}
 
-//#Preview {
-//    TryGlassesView(result: "Oval")
-//        .environmentObject(ARViewModel())
-//}
+#Preview {
+    TryGlassesView(result: "Oval")
+        .environmentObject(ARViewModel())
+}
