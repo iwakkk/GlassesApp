@@ -5,6 +5,17 @@ This project focuses on implementing modern Apple frameworks such as Augmented R
 
 ---
 
+## ⚙️ How It Works
+
+1. Users scan their face using the device camera.
+2. The app analyzes the face shape using CoreML.
+3. Based on the detected face shape, the application provides suitable glasses recommendations.
+4. Users can select recommended glasses models directly from the app.
+5. Using Augmented Reality, users can virtually try on the glasses in real time through the camera.
+6. SceneKit and RealityKit are used to render and display interactive 3D glasses models for an immersive AR experience.
+
+---
+
 ## 📱 Features
 
 - Modern SwiftUI interface
